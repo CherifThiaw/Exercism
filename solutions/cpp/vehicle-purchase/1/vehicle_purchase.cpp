@@ -2,6 +2,34 @@
 
 namespace vehicle_purchase {
 
+// Only "car" and "truck" require a license.
+bool needs_license(const std::string& kind) {
+    return (kind == "car" || kind == "truck");
+}
+
+// Recommends the vehicle that comes first in lexicographical order.
+std::string choose_vehicle(const std::string& option1, const std::string& option2) {
+    const std::string& best = (option1 < option2) ? option1 : option2;
+    return best + " is clearly the better choice.";
+}
+
+// Calculates resell price based on age.
+double calculate_resell_price(double original_price, double age) {
+    if (age < 3)  return original_price * 0.80;
+    if (age < 10) return original_price * 0.70;  // covers 3 <= age < 10
+    return original_price * 0.50;                // age >= 10
+}
+
+}  // namespace vehicle_purchase
+
+
+
+
+
+/*#include "vehicle_purchase.h"
+
+namespace vehicle_purchase {
+
 // needs_license determines whether a license is needed to drive a type of
 // vehicle. Only "car" and "truck" require a license.
 bool needs_license(std::string kind) {
@@ -42,4 +70,4 @@ double calculate_resell_price(double original_price, double age) {
     return original_price;
 }
 
-}  // namespace vehicle_purchase
+}  // namespace vehicle_purchase */
