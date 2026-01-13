@@ -1,39 +1,38 @@
 #include <cmath>
+#include <iomanip>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace freelancer {
 
-bool valid_discount(double discount) {
-    return discount >= 0.0 && discount <= 100.0;
+constexpr double HOURS_PER_DAY = 8.0;
+constexpr int WORKDAYS_PER_MONTH = 22;
+
+void require(bool condition, const char* message) {
+    if (!condition) throw std::invalid_argument(message);
 }
 
-// Calculates the daily rate given an hourly rate
 double daily_rate(double hourly_rate) {
-    if (hourly_rate < 0.0) throw std::invalid_argument("hourly_rate must be >= 0");
-    return hourly_rate * 8.0;
+    require(hourly_rate >= 0.0, "hourly_rate must be >= 0");
+    return hourly_rate * HOURS_PER_DAY;
 }
 
-// Calculates the price after applying a discount (percentage)
 double apply_discount(double price, double discount) {
-    if (price < 0.0) throw std::invalid_argument("price must be >= 0");
-    if (!valid_discount(discount)) throw std::invalid_argument("discount must be between 0 and 100");
+    require(price >= 0.0, "price must be >= 0");
+    require(discount >= 0.0 && discount <= 100.0, "discount must be in [0, 100]");
     return price * (1.0 - discount / 100.0);
 }
 
-// Calculates the monthly rate (22 workdays), rounded up
 int monthly_rate(double hourly_rate, double discount) {
-    const double monthly = daily_rate(hourly_rate) * 22.0;
-    const double discounted = apply_discount(monthly, discount);
-    return static_cast<int>(std::ceil(discounted));
+    double monthly = daily_rate(hourly_rate) * WORKDAYS_PER_MONTH;
+    return static_cast<int>(std::ceil(apply_discount(monthly, discount)));
 }
 
-// Calculates how many full workdays fit in the budget (rounded down)
 int days_in_budget(int budget, double hourly_rate, double discount) {
-    if (budget < 0) throw std::invalid_argument("budget must be >= 0");
-    const double daily = apply_discount(daily_rate(hourly_rate), discount);
+    require(budget >= 0, "budget must be >= 0");
 
-    // Avoid division by zero if daily == 0 (hourly_rate = 0 or discount = 100)
+    double daily = apply_discount(daily_rate(hourly_rate), discount);
     if (daily == 0.0) return 0;
 
     return static_cast<int>(std::floor(budget / daily));
@@ -41,29 +40,33 @@ int days_in_budget(int budget, double hourly_rate, double discount) {
 
 }  // namespace freelancer
 
+template <typename T>
+T read_value(const std::string& label) {
+    T value{};
+    while (true) {
+        std::cout << label;
+        if (std::cin >> value) return value;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+}
+
 int main() {
     try {
-        double hourly_rate = 0.0;
-        double discount = 0.0;
-        int budget = 0;
-
-        std::cout << "Hourly rate: ";
-        if (!(std::cin >> hourly_rate)) return 1;
-
-        std::cout << "Discount (0-100): ";
-        if (!(std::cin >> discount)) return 1;
-
-        std::cout << "Budget: ";
-        if (!(std::cin >> budget)) return 1;
+        double hourly = read_value<double>("Hourly rate: ");
+        double discount = read_value<double>("Discount (0-100): ");
+        int budget = read_value<int>("Budget: ");
 
         std::cout << "\n--- Results ---\n";
-        std::cout << "Daily rate: " << freelancer::daily_rate(hourly_rate) << "\n";
-        std::cout << "Monthly rate (22 days, rounded up): "
-                  << freelancer::monthly_rate(hourly_rate, discount) << "\n";
-        std::cout << "Days in budget (rounded down): "
-                  << freelancer::days_in_budget(budget, hourly_rate, discount) << "\n";
+        std::cout << std::fixed << std::setprecision(2);
+        std::cout << "Daily rate: $" 
+                  << freelancer::daily_rate(hourly) << "\n";
+        std::cout << "Monthly rate: $" 
+                  << freelancer::monthly_rate(hourly, discount) << "\n";
+        std::cout << "Days in budget: " 
+                  << freelancer::days_in_budget(budget, hourly, discount) << "\n";
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        std::cerr << "Error: " << e.what() << '\n';
         return 1;
     }
     return 0;
